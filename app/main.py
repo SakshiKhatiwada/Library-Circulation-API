@@ -1,7 +1,12 @@
 from fastapi import FastAPI
-from routers import router as api_router
+from contextlib import asynccontextmanager
 
-def lifespan(app: FastAPI):
+from routers import router as api_router
+from db import create_db_and_tables
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
     yield
     
 app = FastAPI(title="Library Circulation API", lifespan=lifespan, version="v0.1.0")

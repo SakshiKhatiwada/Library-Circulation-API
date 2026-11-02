@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from db import get_session
 
 router = APIRouter(prefix="/lib")
 
