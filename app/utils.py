@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from fastapi import HTTPException
 
-from schemas import BookTable, BookData
+from schemas import BookTable, BookData, BookUpdate
 
 def fetch_all_books(session: Session):
     statement = select(BookTable)
@@ -25,4 +25,23 @@ def fetch_one_book(book_id: int, session: Session):
         book = result.one_or_none()
     except:
         raise HTTPException(status_code=404, detail="book not found")
+    return book
+
+def update_books(book_id: int, book_details: BookUpdate, session: Session):
+    statement = select(BookTable).where(BookTable.id == book_id)
+    result = session.exec(statement)
+    try:
+        book = result.one_or_none()
+    except:
+        raise HTTPException(status_code=404, detail="book not found")
+    
+    update_data = book_details.model_dump(exclude_unset=True)
+    
+    for key, value in update_data.items():
+        setattr(book, key, value)
+    
+    session.add(book)
+    session.commit()
+    session.refresh(book)
+    
     return book
