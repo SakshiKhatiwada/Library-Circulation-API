@@ -3,7 +3,7 @@ from sqlmodel import Session
 
 from db import get_session, SessionDep
 from schemas import BookData, BookUpdate
-from utils import fetch_all_books, upload_books, fetch_one_book, update_books
+from utils import fetch_all_books, upload_books, fetch_one_book, update_books, del_book
 
 router = APIRouter(prefix="/books")
 
@@ -22,3 +22,7 @@ def get_book(book_id: int, session: SessionDep):
 @router.patch("/{book_id}", status_code=200)
 def patch_book(book_id: int, book_detail: BookUpdate, session: SessionDep):
     return update_books(book_id, book_detail, session)
+
+@router.delete("/{book_id}", status_code=204)
+def delete_book(book_id: int, session: SessionDep):
+   del_book(book_id, session)

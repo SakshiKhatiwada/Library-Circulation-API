@@ -22,7 +22,7 @@ def fetch_one_book(book_id: int, session: Session):
     statement = select(BookTable).where(BookTable.id == book_id)
     result = session.exec(statement)
     try:
-        book = result.one_or_none()
+        book = result.one()
     except:
         raise HTTPException(status_code=404, detail="book not found")
     return book
@@ -31,7 +31,7 @@ def update_books(book_id: int, book_details: BookUpdate, session: Session):
     statement = select(BookTable).where(BookTable.id == book_id)
     result = session.exec(statement)
     try:
-        book = result.one_or_none()
+        book = result.one()
     except:
         raise HTTPException(status_code=404, detail="book not found")
     
@@ -45,3 +45,19 @@ def update_books(book_id: int, book_details: BookUpdate, session: Session):
     session.refresh(book)
     
     return book
+
+def del_book(book_id: int, session: Session):
+    statement = select(BookTable).where(BookTable.id == book_id)
+    try:
+        result = session.exec(statement)
+        try:
+            book = result.one()
+        except:
+            raise HTTPException(status_code=404, detail="book not found")
+    except HTTPException:
+        raise
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+    
+    session.delete(book)
+    session.commit()
