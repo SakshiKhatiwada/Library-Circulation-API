@@ -63,3 +63,35 @@ def del_book(book_id: int, session: Session):
     
     session.delete(book)
     session.commit()
+    
+def does_book_exist(book_id, session: Session):
+    statement = select(BookTable).where(BookTable.id == book_id)
+    result = session.exec(statement)
+    try:  
+        if result.one():
+            return True
+    except:
+       return False
+
+def book_available_copies(book_id: int, session: Session):
+    book = fetch_one_book(book_id, session)
+    return book.available_copies
+
+def update_book_available_copies(book_id: int, session: Session):
+    book = fetch_one_book(book_id, session)
+    try:
+        if book.available_copies == 0:
+            raise HTTPException(status_code=409, detail="Conflict, NO more copies available to loan")
+        
+        if book.available_copies < 0 or book.available_copies > book.total_copies:
+            raise ValueError("Available copies cannot be less than 0 or greater than total copies")
+        
+        book.available_copies -= 1
+        
+        return book
+        
+    except ValueError:
+        raise
+    
+    except:
+        raise HTTPException(status_code=500, detail="Internal Server Error")

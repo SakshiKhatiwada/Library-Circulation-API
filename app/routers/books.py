@@ -3,9 +3,9 @@ from sqlmodel import Session
 
 from db import get_session, SessionDep
 from schemas import BookData, BookUpdate
-from utils import fetch_all_books, upload_books, fetch_one_book, update_books, del_book
+from utils.books import fetch_all_books, upload_books, fetch_one_book, update_books, del_book
 
-router = APIRouter(prefix="/books")
+router = APIRouter(prefix="/books", tags=["books"])
 
 @router.get("", status_code=200)
 def get_books(session: Session = Depends(get_session)):
