@@ -20,7 +20,7 @@ def upload_books(book_info: BookData, session: Session):
     
     return new_book
 
-def fetch_one_book(book_id: int, session: Session):
+def fetch_one_book(book_id: int, session: Session) -> BookTable:
     statement = select(BookTable).where(BookTable.id == book_id)
     result = session.exec(statement)
     try:
@@ -77,21 +77,17 @@ def book_available_copies(book_id: int, session: Session):
     book = fetch_one_book(book_id, session)
     return book.available_copies
 
-def update_book_available_copies(book_id: int, session: Session):
+def update_book_available_copies(book_id: int, session: Session, increment: bool = False):
     book = fetch_one_book(book_id, session)
-    try:
-        if book.available_copies == 0:
-            raise HTTPException(status_code=409, detail="Conflict, NO more copies available to loan")
+    if book.available_copies < 0 or book.available_copies > book.total_copies:
+        raise ValueError("Available copies cannot be less than 0 or greater than total copies")
         
-        if book.available_copies < 0 or book.available_copies > book.total_copies:
-            raise ValueError("Available copies cannot be less than 0 or greater than total copies")
+    if book.available_copies == 0 and not increment:
+        raise HTTPException(status_code=409, detail="Conflict, NO more copies available to loan")
         
-        book.available_copies -= 1
+    if increment:
+        book.available_copies += 1
+    else:
+        book.available_copies -=1
         
-        return book
-        
-    except ValueError:
-        raise
-    
-    except:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    return book
