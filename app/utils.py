@@ -9,14 +9,16 @@ def fetch_all_books(session: Session):
     print(results)
     return results.all()
 
-def upload_books(book_info : BookData, session: Session):
-    books = BookTable.model_validate(book_info)
-    
-    session.add(books)
+def upload_books(book_info: BookData, session: Session):
+    new_book = BookTable(
+        **book_info.model_dump(),
+        available_copies = book_info.total_copies
+    )
+    session.add(new_book)
     session.commit()
-    session.refresh(books)
+    session.refresh(new_book)
     
-    return books
+    return new_book
 
 def fetch_one_book(book_id: int, session: Session):
     statement = select(BookTable).where(BookTable.id == book_id)
