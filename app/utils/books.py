@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 from fastapi import HTTPException
 
-from schemas import BookTable, BookData, BookUpdate
+from schemas import BookTable, BookData, BookUpdate, LoanTable
 
 def fetch_all_books(session: Session):
     statement = select(BookTable)
@@ -10,10 +10,13 @@ def fetch_all_books(session: Session):
     return results.all()
 
 def upload_books(book_info: BookData, session: Session):
-    new_book = BookTable(
-        **book_info.model_dump(),
-        available_copies = book_info.total_copies
-    )
+    try:
+        new_book = BookTable(
+            **book_info.model_dump(),
+            available_copies = book_info.total_copies
+        )
+    except:
+        raise HTTPException(status_code=422, detail="Validation Error")
     session.add(new_book)
     session.commit()
     session.refresh(new_book)
@@ -49,18 +52,19 @@ def update_books(book_id: int, book_details: BookUpdate, session: Session):
     return book
 
 def del_book(book_id: int, session: Session):
-    statement = select(BookTable).where(BookTable.id == book_id)
-    try:
-        result = session.exec(statement)
-        try:
-            book = result.one()
-        except:
-            raise HTTPException(status_code=404, detail="book not found")
-    except HTTPException:
-        raise
-    except:
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+    book = session.get(BookTable, book_id)
     
+    if not book:
+        raise HTTPException(status_code=404, detail="book not found")
+        
+    loan_exists = session.exec(
+        select(LoanTable.id)
+        .where(LoanTable.book_id == book_id)
+        .limit(1)
+    ).first()
+    
+    if loan_exists:
+        raise HTTPException(status_code=409, detail="Conflict. Can't Delete this book, it has loan history.")
     session.delete(book)
     session.commit()
     

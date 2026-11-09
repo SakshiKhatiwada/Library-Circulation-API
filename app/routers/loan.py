@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query, HTTPException
 from typing import Annotated
+from sqlalchemy import delete
 
 from db import SessionDep
 from schemas import Loan, LoanTable
@@ -18,3 +19,8 @@ def post_loan(loan_info: Loan, session: SessionDep):
 @router.patch("/{loan_id}/return", status_code=200)
 def update_return(loan_id: int, session: SessionDep):
     return mark_book_returned(loan_id, session)
+
+# @router.delete("") #TODO - make it authorized 
+# def del_loans_table(session: SessionDep):
+#     session.exec(delete(LoanTable))
+#     session.commit()
