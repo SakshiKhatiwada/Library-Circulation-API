@@ -1,4 +1,6 @@
 from sqlmodel import SQLModel, Field
+from typing import Annotated
+from fastapi import Query
 
 class BookData(SQLModel):
     title: str = Field(min_length=3, max_length=120, description="Title must be 3-120 characters long")
@@ -35,3 +37,8 @@ class LoanTable(SQLModel, table=True):
     book_id: int = Field(foreign_key="booktable.id", ondelete="CASCADE", description="Id referencing the Book")
     borrower_name: str = Field(min_length=2, max_length=80, description="Borrower name with length between 2-80 characters")
     is_returned: bool = False
+    
+class BookFilter(SQLModel):
+    search: str | None = None
+    category: str | None = None
+    available_only: bool | None = None
