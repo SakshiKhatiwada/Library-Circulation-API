@@ -42,3 +42,9 @@ class BookFilter(SQLModel):
     search: str | None = None
     category: str | None = None
     available_only: bool | None = None
+    
+class BookSummary(SQLModel):
+    total_books: int
+    total_copies: int
+    available_copies: int
+    active_loan : int

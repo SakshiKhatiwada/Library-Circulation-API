@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select, or_
+from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlmodel import Session, select, or_, func
 from typing import Annotated
 
 from db import get_session, SessionDep
-from schemas import BookData, BookUpdate, BookFilter, BookTable
+from schemas import BookData, BookUpdate, BookFilter, BookTable, BookSummary, LoanTable
 from utils.books import fetch_all_books, upload_books, fetch_one_book, update_books, del_book
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -47,3 +47,37 @@ def patch_book(book_id: int, book_detail: BookUpdate, session: SessionDep):
 @router.delete("/{book_id}", status_code=204)
 def delete_book(book_id: int, session: SessionDep):
    del_book(book_id, session)
+   
+@router.get("/reports/summary")
+def get_reports_summary(session: Session = Depends(get_session)):
+   book_stats = select(
+       func.count(BookTable.id).label("total_books"),
+       func.coalesce(func.sum(BookTable.total_copies),0).label("total_copies"), #book table empty bhayeko case maa Null dinasakxa, so default value 0 set gareko
+       func.coalesce(func.sum(BookTable.available_copies),0).label("available_copies")
+   ).subquery() # .subquery() converts a SELECT statement into a subquery that can be treated as a table inside another SQL query.
+   
+   active_loans = (
+       select(
+       func.count(LoanTable.id)
+       ).where(LoanTable.is_returned == False).scalar_subquery() # A scalar subquery is a subquery that returns one value (one column, one row) rather than a table of columns.
+   )
+   
+   statement = select(
+       book_stats.c.total_books,
+       book_stats.c.total_copies,
+       book_stats.c.available_copies,
+       active_loans.label("active_loans")
+   )
+   try:
+    results = session.exec(statement=statement).one()
+   except:
+       raise HTTPException(status_code=500, detail="Internal Server Error")
+   
+   return {
+       "total_books": results.total_books,
+       "total_copies": results.total_copies,
+       "available_copies": results.available_copies,
+       "active_loans": results.active_loans,
+   }
+   
+    
